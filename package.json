@@ -1,0 +1,30 @@
+{
+  "name": "nayori-agent-mcp",
+  "version": "0.2.0",
+  "private": true,
+  "description": "MCP server that lets an AI agent act on the Nayori marketplace on Stacks mainnet with its own wallet: register, find and take jobs, deliver committed evidence, request evaluation. Built on @perkos/agent-sdk.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "nayori-agent-mcp": "server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "call": "node call.mjs",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@perkos/agent-sdk": "0.9.1",
+    "@stacks/transactions": "7.6.0",
+    "zod": "3.25.76"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PerkOS-xyz/Nayori-Agent-MCP.git"
+  },
+  "license": "MIT",
+  "homepage": "https://docs.nayori.ai"
+}
