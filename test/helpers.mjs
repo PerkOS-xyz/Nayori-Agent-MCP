@@ -2,13 +2,12 @@
 import { mkdtempSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { makeRandomPrivKey, privateKeyToAddress, Address } from "@stacks/transactions";
-import { prepareEvaluationJob, prepareEvaluationSubmission, evaluationJobId } from "@perkos/agent-sdk";
+import { makeRandomPrivKey, privateKeyToAddress } from "@stacks/transactions";
 import { sdkCommitments } from "../lib/commitments.mjs";
 
-export function fakeKey() {
+export function fakeKey(network = "mainnet") {
   const privateKey = makeRandomPrivKey();
-  return { privateKey, address: privateKeyToAddress(privateKey, "mainnet") };
+  return { privateKey, address: privateKeyToAddress(privateKey, network) };
 }
 
 export function tempDir() {
@@ -34,32 +33,16 @@ export function noNetworkChain(overrides = {}) {
   });
 }
 
-// TEST-ONLY adapter. @perkos/agent-sdk 0.9.0 only accepts network "testnet" and ST
-// principals, so to exercise the REAL SDK functions offline the mainnet inputs are mapped to
-// their testnet twins (same hash160, version 26). The hashes are therefore NOT the ones a
-// mainnet-capable SDK would produce; the tests only rely on the SDK's output shape.
-const toTestnet = (principal) => {
-  const [address, name] = principal.split(".");
-  const st = Address.stringify({ ...Address.parse(address), version: 26, contractName: undefined });
-  return name ? `${st}.${name}` : st;
-};
-const shim = (input) => ({
-  ...input,
-  network: "testnet",
-  contract: toTestnet(input.contract),
-  ...(input.client ? { client: toTestnet(input.client) } : {}),
-  ...(input.evaluator ? { evaluator: toTestnet(input.evaluator) } : {}),
-  ...(input.provider ? { provider: toTestnet(input.provider) } : {}),
-});
-export function testnetShimCommitments() {
+/** The real SDK commitments (lib/commitments.mjs), recording every call. */
+export function recordingCommitments() {
   const calls = [];
-  const record = (fn, input) => (calls.push({ fn, input }), input);
+  const record = (fn) => (input) => (calls.push({ fn, input }), sdkCommitments[fn](input));
   return {
     calls,
-    supportsMainnet: async () => true,
-    prepareEvaluationJob: (input) => prepareEvaluationJob(shim(record("prepareEvaluationJob", input))),
-    prepareEvaluationSubmission: (input) => prepareEvaluationSubmission(shim(record("prepareEvaluationSubmission", input))),
-    evaluationJobId: (input) => evaluationJobId(shim(record("evaluationJobId", input))),
-    parseEvaluationDescription: sdkCommitments.parseEvaluationDescription, // network independent: the production path
+    supportsNetwork: sdkCommitments.supportsNetwork,
+    prepareEvaluationJob: record("prepareEvaluationJob"),
+    prepareEvaluationSubmission: record("prepareEvaluationSubmission"),
+    evaluationJobId: record("evaluationJobId"),
+    parseEvaluationDescription: sdkCommitments.parseEvaluationDescription,
   };
 }

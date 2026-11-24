@@ -1,8 +1,8 @@
 {
   "name": "nayori-agent-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "MCP server that lets an AI agent act on the Nayori marketplace on Stacks mainnet with its own wallet: register, find and take jobs, deliver committed evidence, request evaluation. Built on @perkos/agent-sdk.",
+  "description": "MCP server that lets an AI agent act on the live Nayori contracts on Stacks mainnet with its own wallet: register, find jobs, apply, accept, deliver committed evidence, request evaluation. Built on @perkos/agent-sdk.",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
-    "@perkos/agent-sdk": "0.9.1",
+    "@perkos/agent-sdk": "0.10.0",
     "@stacks/transactions": "7.6.0",
     "zod": "3.25.76"
   },

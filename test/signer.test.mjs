@@ -64,20 +64,25 @@ test("rejects an address that does not match the key, without leaking the key", 
   );
 });
 
-test("rejects a testnet address and a malformed key without echoing them", () => {
+test("rejects an address of the other network and a malformed key without echoing them", () => {
   const k = fakeKey();
-  assert.throws(() => verifySigner(envFor(writeEnvFile({ address: "ST" + k.address.slice(2), privateKey: k.privateKey }))), /SP\.\.\./);
+  assert.throws(() => verifySigner(envFor(writeEnvFile({ address: "ST" + k.address.slice(2), privateKey: k.privateKey }))), /mainnet single-sig address \(SP\.\.\.\)/);
   const bad = "zz" + k.privateKey.slice(2);
   assert.throws(
     () => verifySigner(envFor(writeEnvFile({ address: k.address, privateKey: bad }))),
     (e) => /hex string/.test(e.message) && !e.message.includes(bad)
   );
+  // NAYORI_AGENT_NETWORK=testnet expects an ST address derived on testnet, and refuses SP.
+  const t = fakeKey("testnet");
+  assert.deepEqual(verifySigner({ ...envFor(writeEnvFile(t)), NAYORI_AGENT_NETWORK: "testnet" }), { address: t.address });
+  assert.throws(() => verifySigner({ ...envFor(writeEnvFile(k)), NAYORI_AGENT_NETWORK: "testnet" }), /testnet single-sig address \(ST\.\.\.\)/);
+  assert.throws(() => verifySigner({ ...envFor(writeEnvFile(k)), NAYORI_AGENT_NETWORK: "devnet" }), /NAYORI_AGENT_NETWORK/);
 });
 
 test("signContractCall re-verifies the file before every signature", async () => {
   const k = fakeKey();
   const path = writeEnvFile(k);
-  const call = { contractName: "job-applications-v1", functionName: "withdraw-application", functionArgs: [], nonce: 0, fee: 3000 };
+  const call = { contractName: "nayori-agents", functionName: "register", functionArgs: [], nonce: 0, fee: 3000 };
   const { address } = await signContractCall(call, { env: envFor(path) });
   assert.equal(address, k.address);
   const { chmodSync } = await import("node:fs");
@@ -87,6 +92,15 @@ test("signContractCall re-verifies the file before every signature", async () =>
 
 test("signContractCall refuses when the verified address differs from the expected one", async () => {
   const path = writeEnvFile(fakeKey());
-  const call = { contractName: "job-applications-v1", functionName: "withdraw-application", functionArgs: [], nonce: 0, fee: 3000 };
+  const call = { contractName: "nayori-agents", functionName: "register", functionArgs: [], nonce: 0, fee: 3000 };
   await assert.rejects(signContractCall(call, { env: envFor(path), expectedAddress: fakeKey().address }), /address changed/);
+});
+
+test("signContractCall refuses an apply-to-job without the signer address or above the deposit cap, before the key is read", async () => {
+  const k = fakeKey();
+  const apply = { contractName: "nayori-applications", functionName: "apply-to-job", functionArgs: [], nonce: 0, fee: 3000, amount: 500 };
+  await assert.rejects(signContractCall(apply, { env: envFor("relative/not/read.env") }), /needs the signer address/);
+  await assert.rejects(signContractCall({ ...apply, amount: 10_001 }, { env: envFor("relative/not/read.env"), expectedAddress: k.address }), /outside 100\.\.10000/);
+  const { tx } = await signContractCall({ ...apply, amount: 10_001 }, { env: { ...envFor(writeEnvFile(k)), NAYORI_AGENT_MAX_DEPOSIT_SATS: "20000" }, expectedAddress: k.address });
+  assert.equal(tx.postConditions.values.length, 2);
 });
