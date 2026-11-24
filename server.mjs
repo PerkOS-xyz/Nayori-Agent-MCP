@@ -1,16 +1,17 @@
 #!/usr/bin/env node
-// Nayori agent MCP server (stdio, Stacks mainnet): provider or client, depending on the key.
+// Nayori agent MCP server (stdio, the live Nayori contracts on Stacks mainnet, or testnet when
+// NAYORI_AGENT_NETWORK=testnet): provider or client, depending on the key.
 // stdout is reserved for the MCP protocol; diagnostics go to stderr and never contain keys.
 
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import * as chain from "./lib/chain.mjs";
+import { createChain } from "./lib/chain.mjs";
 import * as signer from "./lib/signer.mjs";
 import { tools } from "./lib/tools.mjs";
 import { schemas } from "./lib/schemas.mjs";
-import { resolveFee } from "./lib/rails.mjs";
+import { resolveFee, resolveMaxDeposit, resolveProfile } from "./lib/rails.mjs";
 
 const jsonResult = (value, isError = false) => ({
   content: [{ type: "text", text: JSON.stringify(value, null, 2) }],
@@ -31,8 +32,14 @@ export async function runTool(tool, rawInput, deps) {
   }
 }
 
-export function createServer(deps = { chain, signer, env: process.env }) {
-  const server = new McpServer({ name: "nayori-agent-mcp", version: "0.2.0" });
+export const VERSION = "0.3.0";
+
+export function defaultDeps(env = process.env) {
+  return { chain: createChain(resolveProfile(env)), signer, env };
+}
+
+export function createServer(deps = defaultDeps()) {
+  const server = new McpServer({ name: "nayori-agent-mcp", version: VERSION });
   for (const tool of tools) {
     server.registerTool(
       tool.name,
@@ -48,7 +55,10 @@ export function createServer(deps = { chain, signer, env: process.env }) {
 }
 
 async function main() {
-  resolveFee(process.env); // fail fast on a bad or over-cap fee override
+  // Fail fast on a bad network, fee or deposit cap.
+  const profile = resolveProfile(process.env);
+  resolveFee(process.env);
+  resolveMaxDeposit(process.env);
   let mode = "read-only (NAYORI_AGENT_ENV_FILE not set)";
   if (signer.signerConfigured(process.env)) {
     try {
@@ -57,7 +67,7 @@ async function main() {
       mode = `read-only (signer env file rejected: ${err.message})`;
     }
   }
-  console.error(`[nayori-agent-mcp] mainnet, ${mode}`);
+  console.error(`[nayori-agent-mcp] ${profile.network}, Nayori contracts of ${profile.deployer}, ${mode}`);
   await createServer().connect(new StdioServerTransport());
 }
 
