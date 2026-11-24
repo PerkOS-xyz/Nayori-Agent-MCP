@@ -60,7 +60,7 @@ async function committedJob({ client, provider = null, status = "accepted", asse
   };
 }
 
-test("only lib/sdk.mjs imports @perkos/agent-sdk, and the dependency is the local 0.10.0 checkout", () => {
+test("only lib/sdk.mjs imports @perkos/agent-sdk, and the dependency is pinned to 0.10.0", () => {
   for (const dir of ["../lib/", "../"]) {
     for (const f of readdirSync(new URL(dir, import.meta.url)).filter((n) => n.endsWith(".mjs"))) {
       const src = readFileSync(new URL(`${dir}${f}`, import.meta.url), "utf8");
@@ -68,7 +68,7 @@ test("only lib/sdk.mjs imports @perkos/agent-sdk, and the dependency is the loca
     }
   }
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-  assert.equal(pkg.dependencies["@perkos/agent-sdk"], "file:../PerkOS-Nayori-Agent-SDK-next");
+  assert.equal(pkg.dependencies["@perkos/agent-sdk"], "0.10.0");
   const sdkPkg = JSON.parse(readFileSync(new URL("../node_modules/@perkos/agent-sdk/package.json", import.meta.url), "utf8"));
   assert.equal(sdkPkg.version, "0.10.0");
   // rails.mjs never imports the SDK: its constants are checked against the SDK in rails.test.mjs.

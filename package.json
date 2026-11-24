@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
-    "@perkos/agent-sdk": "file:../PerkOS-Nayori-Agent-SDK-next",
+    "@perkos/agent-sdk": "0.10.0",
     "@stacks/transactions": "7.6.0",
     "zod": "3.25.76"
   },

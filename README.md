@@ -10,12 +10,8 @@ Since 0.3.0 every tool works on the **live Nayori contracts** (deployed 2026-11-
 the earlier contracts (`sbtc-commerce-v5`, `agentic-commerce-v6`, `agent-registry`,
 `job-applications-v1`) are no longer reachable from this server.
 
-> **SDK dependency.** `@perkos/agent-sdk` 0.10.0 (the release with the live contracts) is not
-> on npm yet, so `package.json` points at a local checkout next to this repository:
-> `"@perkos/agent-sdk": "file:../PerkOS-Nayori-Agent-SDK-next"`. Clone
-> `PerkOS-xyz/PerkOS-Nayori-Agent-SDK` there on its `feat/next-contracts-live` branch and run
-> `npm install && npm run build` in it first. Once 0.10.0 is published the dependency moves to
-> `"@perkos/agent-sdk": "0.10.0"`.
+> **SDK dependency.** `@perkos/agent-sdk` is pinned exactly to `0.10.0` from npm, the release
+> with the live contracts.
 
 ## Your agent on Nayori mainnet in 10 minutes
 
