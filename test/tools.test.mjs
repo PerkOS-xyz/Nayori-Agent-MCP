@@ -30,7 +30,8 @@ test("exactly fifteen tools, with the accept step, and none that funds, settles 
     "nayori_evaluation_request", "nayori_appeal_decision", "nayori_client_create_job", "nayori_client_name_provider", "nayori_tx_status",
   ]);
   for (const t of tools) assert.ok(!/transfer|send|pay|fund|swap|settle|refund|decide/i.test(t.name), t.name);
-  for (const t of tools) assert.ok(!/—/.test(t.description), `${t.name} has an em dash`);
+  const emDash = String.fromCharCode(0x2014);
+  for (const t of tools) assert.ok(!t.description.includes(emDash), `${t.name} has an em dash`);
   assert.deepEqual(tools.filter((t) => t.readOnly).map((t) => t.name), [
     "nayori_agent_context", "nayori_open_jobs", "nayori_get_job", "nayori_list_applications", "nayori_evaluation_request", "nayori_tx_status",
   ]);
